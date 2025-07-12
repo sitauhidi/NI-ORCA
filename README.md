@@ -17,7 +17,7 @@ NI-ORCA is a high-performance C++17 library for counting the orbits of non-induc
 ## Build Instructions
 
 ```bash
-git clone https://github.com/yourusername/niorca.git
+git clone https://hpdc-gitlab.eeecs.qub.ac.uk/sitauhidi/niorca.git
 cd niorca
 make
 ```

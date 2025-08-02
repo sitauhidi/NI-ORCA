@@ -27,6 +27,27 @@ make
 ./build/niorca [MODE] [INPUT_FILE] [OUTPUT_FILE]
 ```
 
+---
+
+### Input Graph File Format
+
+All graphs should be in `.graph` format:
+
+```
+t N M
+v 0 1 2
+v 1 2 1
+...
+e 0 1
+e 1 2
+...
+```
+
+* `t N M`: number of nodes `N` and edges `M`
+* `v ID Label Degree`: vertex ID, label (label is required), degree (optional)
+* `e u v`: edge between vertex `u` and `v`
+---
+
 ### Example:
 
 ```bash

@@ -45,6 +45,20 @@ public:
     virtual void orbit_count() = 0;
     void writeResults();
 
+    inline void solve_equations(int x, int64 f_14, int64 f_13_14, int64 f_12_14, int64 f_11_13, int64 f_10_13, int64 f_9_12, int64 f_8_12, int64 f_7_11, int64 f_6_9, int64 f_5_8, int64 f_4_8) {
+        orbit[x][14] = (f_14);
+        orbit[x][13] = (f_13_14 - 6 * f_14) / 2;
+        orbit[x][12] = (f_12_14 - 3 * f_14);
+        orbit[x][11] = (f_11_13 - f_13_14 + 6 * f_14) / 2;
+        orbit[x][10] = (f_10_13 - f_13_14 + 6 * f_14);
+        orbit[x][9] = (f_9_12 - 2 * f_12_14 + 6 * f_14) / 2;
+        orbit[x][8] = (f_8_12 - 2 * f_12_14 + 6 * f_14) / 2;
+        orbit[x][7] = (f_13_14 + f_7_11 - f_11_13 - 6 * f_14) / 6;
+        orbit[x][6] = (2 * f_12_14 + f_6_9 - f_9_12 - 6 * f_14) / 2;
+        orbit[x][5] = (2 * f_12_14 + f_5_8 - f_8_12 - 6 * f_14);
+        orbit[x][4] = (2 * f_12_14 + f_4_8 - f_8_12 - 6 * f_14);
+    }
+
 protected:
     // Edge pair with consistent ordering (a < b)
     struct PAIR {

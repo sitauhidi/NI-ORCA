@@ -1,37 +1,55 @@
 # NI-ORCA: Parallel Non-Induced Graphlet Orbit Counter
 
-NI-ORCA is a high-performance C++17 library for counting the orbits of non-induced graphlets (up to size 4) in large undirected graphs. It provides multiple parallel implementations using OpenMP with configurable thread scheduling and data structures for benchmarking and research use.
+NI-ORCA is a high-performance C++17 library for computing the orbit counts of non-induced graphlets (up to size 4) in large undirected graphs. It features an orthogonal, highly configurable template-based architecture to allow HPC researchers to benchmark various parallelization techniques independently.
 
 ## Features
-
-- Supports multiple execution modes:
-  - `FHM_VERTEX`, `UOM_VERTEX`, `ARR_VERTEX` – Vertex-parallel using different backends
-  - `FHM_THREAD`, `UOM_THREAD`, `ARR_THREAD` – Thread-private accumulators with reduction
-  - `NIORCA` – Mixed parallelism optimized for large graphs
-  - `SEQ` - Sequential code
-- Configurable OpenMP scheduling (`static`, `dynamic`, `guided`) at runtime
-- Thread pinning and binding for NUMA-aware performance tuning
-- Input format: DIMACS `.graph` format
-- Output: 15-dimensional orbit counts per node
+- **Configurable Parallel Strategies:** Instead of hardcoded binaries, compose the perfect OpenMP parallel loop:
+  - `--par <SEQ|OMP>`: Run sequentially or multi-threaded.
+  - `--c4 <FHM|UOM|ARRAY>`: The data structure strategy for the 4-cycle loop.
+  - `--map <FHM|UOM|ARRAY>`: The backend data structure for thread/node local mappings.
+  - `--alloc <THREAD|VERTEX>`: Allocate memory maps purely per thread, or freshly per vertex.
+- **SLURM Ready distributed execution:** Test scaling directly utilizing clusters and arrays.
+- **Automated Dataset Conversion:** Fetch, extract, and convert SNAP sets into the `DIMACS` `.graph` standard via Python.
 
 ## Build Instructions
 
 ```bash
 git clone https://hpdc-gitlab.eeecs.qub.ac.uk/sitauhidi/niorca.git
 cd niorca
-make
+make -j4
 ```
 
-## Usage
+## Data Preparation
+
+To download the benchmark datasets to the `data/` directory and convert them to the expected DIMACS `.graph` format, run:
+
 ```bash
-./build/niorca [MODE] [INPUT_FILE] [OUTPUT_FILE]
+python3 scripts/download_and_convert.py
+```
+This automatically verifies the files and cleans up temporary compressed archives.
+
+## Usage
+
+```bash
+./build/niorca [options] <input_file> <output_file>
+
+Options:
+  --par   <SEQ|OMP>        Parallelism mode (default: OMP)
+  --c4    <FHM|UOM|ARRAY>  4-Cycle counting strategy (default: FHM)
+  --map   <FHM|UOM|ARRAY>  Common neighbor map type (default: ARRAY)
+  --alloc <THREAD|VERTEX>  Map allocation strategy (default: THREAD)
+```
+
+### Example
+
+```bash
+./build/niorca --par OMP --c4 FHM --map ARRAY --alloc THREAD data/ca-GrQc.graph output.txt
 ```
 
 ---
 
 ### Input Graph File Format
-
-All graphs should be in `.graph` format:
+All graphs should be formatted via our `download_and_convert.py` tool. The expected `.graph` DIMACS structure looks like:
 
 ```
 t N M
@@ -43,32 +61,20 @@ e 1 2
 ...
 ```
 
-* `t N M`: number of nodes `N` and edges `M`
-* `v ID Label Degree`: vertex ID, label (label is required), degree (optional)
-* `e u v`: edge between vertex `u` and `v`
----
+* `t N M`: total nodes `N` and edges `M`
+* `v ID Label Degree`: contiguous vertex ID, original label reference, degree.
+* `e u v`: an undirected edge between vertex `u` and `v`
 
-### Example:
+## HPC Benchmarking
 
-```bash
-./build/niorca FHM_VERTEX datasets/dblp.graph output.txt
-```
-
-### Set OpenMP environment variables to control parallelism:
+To collect massive arrays of data testing how well algorithms scale per thread/thread-type/scheduler, SLURM scripts are natively provided. 
+From the **root directory**, simply execute:
 
 ```bash
-export OMP_NUM_THREADS=8
-export OMP_SCHEDULE="dynamic"
-export OMP_PROC_BIND=true
-export OMP_PLACES=cores
+# To test scaling parallel strategies across all dimensions
+sbatch scripts/runner.sh
 ```
 
-## Benchmarking
-A sample benchmarking script is provided:
-
-```bash
-cd scripts/
-./runner.sh
-```
-
-This script runs all parallel modes across multiple datasets, thread counts, and OpenMP schedulers, printing results directly to the terminal.
+- Tests automatically utilize `SLURM Arrays` (`--array=0-6`) to parallelize testing instances, allocating 1 dataset exactly to 1 cluster node.
+- Standard cluster logs and algorithmic scaling `.csv` sheets dump neatly into the `output/` directory dynamically.
+- `scripts/seq_runner.sh` serves to run unthreaded sequential modes strictly to calculate your multi-threaded speedups.

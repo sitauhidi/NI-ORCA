@@ -15,11 +15,7 @@ INSTALL_BIN_DIR := $(DESTDIR)$(PREFIX)/bin
 
 # Source files
 SRCS := $(SRC_DIR)/ORCA.cpp \
-        $(SRC_DIR)/NIORCA.cpp \
-        $(UTIL_DIR)/SEQ-Counter.cpp \
-        $(UTIL_DIR)/OMP-Vertex-Counter.cpp \
-        $(UTIL_DIR)/OMP-Thread-Counter.cpp \
-        driver.cpp
+        $(SRC_DIR)/driver.cpp
 
 # Object files (flattened, e.g., build/obj/ORCA.o)
 OBJS := $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(notdir $(SRCS)))

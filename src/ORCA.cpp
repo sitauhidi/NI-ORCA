@@ -49,19 +49,15 @@ size_t ORCA::hash_TRIPLE::operator()(const TRIPLE &x) const {
 
 // Graph class constructor and destructor
 ORCA::ORCA() : n(0), m(0), d_max(0), deg(nullptr), edges(nullptr),
-                 adj(nullptr), inc(nullptr), adj_matrix(nullptr), orbit(nullptr) {}
+                 row_ptr(nullptr), adj(nullptr), inc(nullptr), new_id(nullptr), adj_matrix(nullptr), orbit(nullptr) {}
 
 ORCA::~ORCA() {
     if (deg) free(deg);
     if (edges) free(edges);
-    if (adj) {
-        for (int i = 0; i < n; ++i) free(adj[i]);
-        free(adj);
-    }
-    if (inc) {
-        for (int i = 0; i < n; ++i) free(inc[i]);
-        free(inc);
-    }
+    if (row_ptr) free(row_ptr);
+    if (adj) free(adj);
+    if (inc) free(inc);
+    if (new_id) free(new_id);
     if (adj_matrix) free(adj_matrix);
     if (orbit) {
         for (int i = 0; i < n; ++i) free(orbit[i]);
@@ -70,7 +66,7 @@ ORCA::~ORCA() {
 }
 
 bool ORCA::adjacent_list(int x, int y) {
-    return std::binary_search(adj[x], adj[x] + deg[x], y);
+    return std::binary_search(adj + row_ptr[x], adj + row_ptr[x] + deg[x], y);
 }
 
 bool ORCA::adjacent_matrix(int x, int y) {
@@ -78,7 +74,7 @@ bool ORCA::adjacent_matrix(int x, int y) {
 }
 
 int ORCA::getEdgeId(int x, int y) {
-    return inc[x][std::lower_bound(adj[x], adj[x] + deg[x], y) - adj[x]].second;
+    return inc[row_ptr[x] + (std::lower_bound(adj + row_ptr[x], adj + row_ptr[x] + deg[x], y) - (adj + row_ptr[x]))].second;
 }
 
 int ORCA::init(int argc, char *argv[]) {
@@ -124,6 +120,26 @@ int ORCA::init(int argc, char *argv[]) {
   		deg[a]++; deg[b]++;
   		edges[i]=PAIR(a,b);
   	}
+
+    // relabeling
+    int* order = (int*)malloc(n * sizeof(int));
+    for(int i=0; i<n; i++) order[i] = i;
+    std::sort(order, order+n, [&](int a, int b) { return deg[a] > deg[b]; });
+    new_id = (int*)malloc(n * sizeof(int));
+    for(int i=0; i<n; i++) new_id[order[i]] = i;
+    
+    int* new_deg = (int*)calloc(n, sizeof(int));
+    for(int i=0; i<n; i++) new_deg[new_id[i]] = deg[i];
+    free(deg);
+    deg = new_deg;
+
+    for (int i=0;i<m;i++) {
+        edges[i].a = new_id[edges[i].a];
+        edges[i].b = new_id[edges[i].b];
+        if (edges[i].a > edges[i].b) std::swap(edges[i].a, edges[i].b);
+    }
+    free(order);
+
   	for (int i=0;i<n;i++) d_max=std::max(d_max,deg[i]);
   	fin.close();
   	if ((int)(std::set<PAIR>(edges,edges+m).size())!=m) {
@@ -143,20 +159,24 @@ int ORCA::init(int argc, char *argv[]) {
   		adjacent = [this](int x, int y) { return adjacent_list(x, y); };
   	}
   	// set up adjacency, incidence lists
-  	adj = (int**)malloc(n*sizeof(int*));
-  	for (int i=0;i<n;i++) adj[i] = (int*)malloc(deg[i]*sizeof(int));
-  	inc = (PII**)malloc(n*sizeof(PII*));
-  	for (int i=0;i<n;i++) inc[i] = (PII*)malloc(deg[i]*sizeof(PII));
+    row_ptr = (int*)calloc(n + 1, sizeof(int));
+    for (int i=0; i<n; i++) row_ptr[i+1] = row_ptr[i] + deg[i];
+    adj = (int*)malloc(2 * m * sizeof(int));
+    inc = (PII*)malloc(2 * m * sizeof(PII));
+
   	int *d = (int*)calloc(n,sizeof(int));
   	for (int i=0;i<m;i++) {
   		int a=edges[i].a, b=edges[i].b;
-  		adj[a][d[a]]=b; adj[b][d[b]]=a;
-  		inc[a][d[a]]=PII(b,i); inc[b][d[b]]=PII(a,i);
+        int pos_a = row_ptr[a] + d[a];
+        int pos_b = row_ptr[b] + d[b];
+  		adj[pos_a]=b; adj[pos_b]=a;
+  		inc[pos_a]=PII(b,i); inc[pos_b]=PII(a,i);
   		d[a]++; d[b]++;
   	}
+    free(d);
   	for (int i=0;i<n;i++) {
-  		std::sort(adj[i],adj[i]+deg[i]);
-  		std::sort(inc[i],inc[i]+deg[i]);
+  		std::sort(adj + row_ptr[i], adj + row_ptr[i] + deg[i]);
+  		std::sort(inc + row_ptr[i], inc + row_ptr[i] + deg[i]);
   	}
   	// initialize orbit counts
   	orbit = (int64**)malloc(n*sizeof(int64*));
@@ -166,10 +186,32 @@ int ORCA::init(int argc, char *argv[]) {
 
 void ORCA::writeResults() {
     for (int i = 0; i < n; i++) {
+        int mapped = new_id[i];
         for (int j = 0; j < 15; j++) {
             if (j != 0) fout << ",";
-            fout << orbit[i][j];
+            fout << orbit[mapped][j];
         }
         fout << std::endl;
     }
+}
+
+void ORCA::extract_and_print_features() {
+    if (n == 0) return;
+    int max_d = 0;
+    int min_d = n;
+    double sum_d = 0;
+    for (int i = 0; i < n; i++) {
+        max_d = std::max(max_d, deg[i]);
+        min_d = std::min(min_d, deg[i]);
+        sum_d += deg[i];
+    }
+    double avg_d = sum_d / n;
+    double var_d = 0;
+    for (int i = 0; i < n; i++) {
+        var_d += (deg[i] - avg_d) * (deg[i] - avg_d);
+    }
+    var_d /= n;
+    double density = (double)(2LL * m) / ((double)n * (n - 1));
+
+    std::cout << n << "," << m << "," << density << "," << min_d << "," << max_d << "," << avg_d << "," << var_d << std::endl;
 }

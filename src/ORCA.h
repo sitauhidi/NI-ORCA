@@ -44,6 +44,7 @@ public:
     int init(int argc, char* argv[]);
     virtual void orbit_count() = 0;
     void writeResults();
+    void extract_and_print_features();
 
     inline void solve_equations(int x, int64 f_14, int64 f_13_14, int64 f_12_14, int64 f_11_13, int64 f_10_13, int64 f_9_12, int64 f_8_12, int64 f_7_11, int64 f_6_9, int64 f_5_8, int64 f_4_8) {
         orbit[x][14] = (f_14);
@@ -100,8 +101,10 @@ protected:
     PAIR* edges = nullptr;           // Edge list
 
     // Graph structure
-    int** adj = nullptr;             // Adjacency list: adj[x][i] = neighbor
-    PII** inc = nullptr;             // Incidence list: inc[x][i] = (neighbor, edge id)
+    int* row_ptr = nullptr;          // CSR row pointers
+    int* adj = nullptr;              // Adjacency list (CSR)
+    PII* inc = nullptr;              // Incidence list (CSR)
+    int* new_id = nullptr;           // Mapping from new to old ID
     int* adj_matrix = nullptr;       // Bit-packed adjacency matrix
     const int adj_chunk = sizeof(int) * 8;
     function<bool(int, int)> adjacent; // Adjacency check function

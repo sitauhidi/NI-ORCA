@@ -1,3 +1,9 @@
 build/
 data/
 output/
+analysis/*.csv
+analysis/*.png
+analysis/*.log
+analysis/*.err
+dummy.txt
+output.txt

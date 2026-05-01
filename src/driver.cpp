@@ -33,7 +33,7 @@ template<Parallelism PAR>
 ORCA* create_c4(const std::string& c4, const std::string& map_t, const std::string& alloc) {
     if (c4 == "FHM") return create_map<PAR, C4Strategy::LOCAL_FHM>(map_t, alloc);
     if (c4 == "UOM") return create_map<PAR, C4Strategy::LOCAL_UOM>(map_t, alloc);
-    if (c4 == "ARRAY") return create_map<PAR, C4Strategy::GLOBAL_ATOMIC>(map_t, alloc);
+    if (c4 == "ARRAY") return create_map<PAR, C4Strategy::LOCAL_ARRAY>(map_t, alloc);
     return nullptr;
 }
 
@@ -42,7 +42,7 @@ ORCA* build_algorithm(const std::string& par, const std::string& c4, const std::
         // For SEQ, alloc mode is NONE conceptually, we just map it down efficiently
         if (c4 == "FHM") return create_map<Parallelism::SEQ, C4Strategy::LOCAL_FHM>(map_t, "THREAD");
         if (c4 == "UOM") return create_map<Parallelism::SEQ, C4Strategy::LOCAL_UOM>(map_t, "THREAD");
-        if (c4 == "ARRAY") return create_map<Parallelism::SEQ, C4Strategy::GLOBAL_ATOMIC>(map_t, "THREAD");
+        if (c4 == "ARRAY") return create_map<Parallelism::SEQ, C4Strategy::LOCAL_ARRAY>(map_t, "THREAD");
         return nullptr;
     }
     if (par == "OMP") return create_c4<Parallelism::OMP>(c4, map_t, alloc);
@@ -56,6 +56,7 @@ int main(int argc, char* argv[]) {
     std::string alloc = "THREAD";
     std::string input_file = "";
     std::string output_file = "";
+    bool features_only = false;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -63,6 +64,7 @@ int main(int argc, char* argv[]) {
         else if (arg == "--c4" && i + 1 < argc) c4 = argv[++i];
         else if (arg == "--map" && i + 1 < argc) map_t = argv[++i];
         else if (arg == "--alloc" && i + 1 < argc) alloc = argv[++i];
+        else if (arg == "--features-only") features_only = true;
         else if (arg == "-h" || arg == "--help") { print_usage(argv[0]); return 0; }
         else if (input_file.empty()) input_file = arg;
         else if (output_file.empty()) output_file = arg;
@@ -95,6 +97,13 @@ int main(int argc, char* argv[]) {
         delete algorithm;
         return 1;
     }
+    
+    if (features_only) {
+        algorithm->extract_and_print_features();
+        delete algorithm;
+        return 0;
+    }
+
     end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end - start;
     std::cout << elapsed_seconds.count() << ","; 

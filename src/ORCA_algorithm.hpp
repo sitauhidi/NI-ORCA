@@ -281,11 +281,6 @@ private:
         int nc = 0;
         int64 f_12_14 = 0, f_10_13 = 0, f_13_14 = 0, f_11_13 = 0, f_7_11 = 0, f_5_8 = 0, f_6_9 = 0, f_9_12 = 0, f_4_8 = 0, f_8_12 = 0;
 
-        for (int i = 0; i < nc; i++) {
-            if constexpr (COMMON_MAP == MapType::ARRAY) common[common_list[i]] = 0;
-            else (*common)[common_list[i]] = 0;
-        }
-
         orbit[x][0] = deg[x];
         // x - middle node
         for (int nx1 = 0; nx1 < deg[x]; nx1++) {
@@ -341,6 +336,40 @@ private:
         }
 
         solve_equations(x, f_14, f_13_14, f_12_14, f_11_13, f_10_13, f_9_12, f_8_12, f_7_11, f_6_9, f_5_8, f_4_8);
+
+        // Transform induced counts to non-induced counts
+        int64 I_4 = orbit[x][4];
+        int64 I_5 = orbit[x][5];
+        int64 I_6 = orbit[x][6];
+        int64 I_7 = orbit[x][7];
+        int64 I_8 = orbit[x][8];
+        int64 I_9 = orbit[x][9];
+        int64 I_10 = orbit[x][10];
+        int64 I_11 = orbit[x][11];
+        int64 I_12 = orbit[x][12];
+        int64 I_13 = orbit[x][13];
+        int64 I_14 = orbit[x][14];
+        
+        orbit[x][14] = I_14;
+        orbit[x][13] = I_13 + 3 * I_14;
+        orbit[x][12] = I_12 + 3 * I_14;
+        orbit[x][11] = I_11 + 2 * I_13 + 3 * I_14;
+        orbit[x][10] = I_10 + 2 * I_12 + 2 * I_13 + 6 * I_14;
+        orbit[x][9] = I_9 + 2 * I_12 + 3 * I_14;
+        orbit[x][8] = I_8 + I_12 + I_13 + 3 * I_14;
+        orbit[x][7] = I_7 + I_11 + I_13 + I_14;
+        orbit[x][6] = I_6 + I_9 + I_10 + 2 * I_12 + I_13 + 3 * I_14;
+        orbit[x][5] = I_5 + 2 * I_8 + I_10 + 2 * I_11 + 2 * I_12 + 4 * I_13 + 6 * I_14;
+        orbit[x][4] = I_4 + 2 * I_8 + 2 * I_9 + I_10 + 4 * I_12 + 2 * I_13 + 6 * I_14;
+
+        // 3-node non-induced counts
+        orbit[x][2] += orbit[x][3];
+        orbit[x][1] += 2 * orbit[x][3];
+
+        for (int i = 0; i < nc; i++) {
+            if constexpr (COMMON_MAP == MapType::ARRAY) common[common_list[i]] = 0;
+            else (*common)[common_list[i]] = 0;
+        }
     }
 };
 

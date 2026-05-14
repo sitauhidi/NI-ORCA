@@ -10,6 +10,8 @@
 mkdir -p output
 mkdir -p data
 
+source $HOME/sharedscratch/env/bin/activate
+
 echo "Starting Barabasi-Albert Graph Generation..."
 python3 ml/generate_graphs.py
 echo "Graph generation completed."

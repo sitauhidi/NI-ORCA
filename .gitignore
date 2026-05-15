@@ -1,9 +1,6 @@
 build/
 data/
 output/
-analysis/*.csv
-analysis/*.png
-analysis/*.log
-analysis/*.err
+analysis/
 dummy.txt
 output.txt
